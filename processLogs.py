@@ -190,15 +190,15 @@ class Logbook(object):
                     if not os.path.isdir(dirLog):
                         print "Creating directory "+dirLog
                         os.makedirs(dirLog)
-                    url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
+                    url = 'http://www.geocachin.com/'+url+'/log.aspx?LUID='+idLog
                     print "Fetching log", url
                     try:
                         dataLog = urllib2.urlopen(url).read().decode('utf-8')
                         print "Saving log file "+idLog
                         with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                             fw.write(dataLog)
-                    except urrlib2.HTTPError as e:
-                        print "Error accessing log "+idLog,e
+                    except urllib2.HTTPError, e:
+                        print "Error accessing log " + idLog,e
                         continue
                 else:
                     with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
