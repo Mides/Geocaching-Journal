@@ -129,6 +129,7 @@ class Logbook(object):
             with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
         except:
+            self.fXML.write('<?xml version="1.0" encoding="UTF-8"?>')
             self.fXML.write('<document>\n')
             self.fXML.write('<title><![CDATA[' + bookTitle + ']]></title>\n')
             self.fXML.write('<description>' + bookDescription + '</description>\n')
@@ -333,7 +334,7 @@ if __name__ == '__main__':
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
-            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True)
+            xml2print(xmlFile, args[1], printing=False, groupPanoramas=True)
         print "That's all folks!"
     else:
         usage()
