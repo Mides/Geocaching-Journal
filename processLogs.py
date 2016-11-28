@@ -41,7 +41,7 @@ locale.setlocale(locale.LC_ALL, '')
 
 # default title and description of the logbook (should be in logbook_header.xml)
 bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
-bookDescription = u"""<description>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
+bookDescription = u"""<description><![CDATA[%s]]>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml]]></description>"""
 
 class Logbook(object):
     """
@@ -75,13 +75,13 @@ class Logbook(object):
             # adding the name of the cache where the trackable is, if present in the log
             titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>', dataLog, re.S).group(2)
             titleCache = titleCache + ' @ ' + titleTb
-        self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache, url, idCache))
-        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, urlLog, idLog))
+        self.fXML.write('<post><![CDATA[%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache, url, idCache))
+        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s]]></post>\n'%(typeLog, urlLog, idLog))
 
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
             text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
-            self.fXML.write('<text>%s</text>\n'%text)
+            self.fXML.write('<text><![CDATA[%s]]></text>\n'%text)
         else:
             self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable", idLog
@@ -106,15 +106,15 @@ class Logbook(object):
             print u'!!!! Log without image', idLog, dateLog, u'%r'%titleCache,'>>>',typeLog
 
         # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
-
+        self.fXML.write('<images>\n')
         for (img, caption, panora) in listeImages:
             typeImage = ('pano' if panora else 'image')
             # at this point, no information is available on the size of image
             # assume a standard format 640x480 (nostalgia of the 80's?)
             if typeImage == 'pano':
                 img = re.sub('/display/', '/', img)
-            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage, img, caption, typeImage))
-
+            self.fXML.write("<![CDATA[<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>]]>\n"%(typeImage, img, caption, typeImage))
+        self.fXML.write('</images>\n')
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
@@ -129,8 +129,8 @@ class Logbook(object):
             with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
         except:
-
-            self.fXML.write('<title>' + bookTitle + '</title>\n')
+            self.fXML.write('<document>\n')
+            self.fXML.write('<title><![CDATA[' + bookTitle + ']]></title>\n')
             self.fXML.write('<description>' + bookDescription + '</description>\n')
 
         allLogs = 0
@@ -197,8 +197,8 @@ class Logbook(object):
                         print "Saving log file "+idLog
                         with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                             fw.write(dataLog)
-                    except (urllib2.HTTPError, urllib2.URLError), msg:
-                        print "Error accessing log "+idLog, msg
+                    except urllib2.HTTPError, e:
+                        print "Error accessing log " + idLog,e
                         continue
                 else:
                     with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
@@ -207,8 +207,8 @@ class Logbook(object):
                         dataLog = fr.read()
                 # grabbing information from the log page
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
-
-        self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
+        self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
+        self.fXML.write('</document>')       
         self.fXML.close()
         print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
         print 'Result file:', self.fNameOutput
