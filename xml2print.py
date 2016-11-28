@@ -78,7 +78,7 @@ class XmlHandler(handler.ContentHandler):
 
     def date(self):
         self.fw.write(u"""<div class="main">\n<div class="date">\n<h2 class="date-header">%s</h2>\n</div>\n"""%self.current_content)
-    
+
     def post(self):
         if XmlHandler.breakCache == True:
             self.fw.write('<div class="post-banner"></div>\n')
@@ -98,10 +98,8 @@ class XmlHandler(handler.ContentHandler):
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
-        self.fw.write('<table class="table-pictures"><tr><td>')        
+        self.fw.write('<table class="table-pictures"><tr><td>') 
         for index, image in enumerate(data):
-            if image ==  '': # à contrôler pourquoi dernière image vide
-                continue
             match = re.search('<comment>(.*?)</comment>', image, re.S)
             name =  match.group(1)            
             match = re.search('image>(.*?)<', image, re.S)

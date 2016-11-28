@@ -106,15 +106,16 @@ class Logbook(object):
             print u'!!!! Log without image', idLog, dateLog, u'%r'%titleCache,'>>>',typeLog
 
         # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
-        self.fXML.write('<images>\n')
-        for (img, caption, panora) in listeImages:
-            typeImage = ('pano' if panora else 'image')
-            # at this point, no information is available on the size of image
-            # assume a standard format 640x480 (nostalgia of the 80's?)
-            if typeImage == 'pano':
-                img = re.sub('/display/', '/', img)
-            self.fXML.write("<![CDATA[<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>]]>\n"%(typeImage, img, caption, typeImage))
-        self.fXML.write('</images>\n')
+        if listeImages:
+            self.fXML.write('<images>\n')
+            for (img, caption, panora) in listeImages:
+                typeImage = ('pano' if panora else 'image')
+                # at this point, no information is available on the size of image
+                # assume a standard format 640x480 (nostalgia of the 80's?)
+                if typeImage == 'pano':
+                    img = re.sub('/display/', '/', img)
+                self.fXML.write("<![CDATA[<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>]]>\n"%(typeImage, img, caption, typeImage))
+            self.fXML.write('</images>\n')
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
