@@ -197,9 +197,9 @@ class Logbook(object):
                         print "Saving log file "+idLog
                         with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                             fw.write(dataLog)
-						except (urllib2.HTTPError, urllib2.URLError), msg:
-							print "Error accessing log "+idLog, msg
-							continue
+                    except (urllib2.HTTPError, urllib2.URLError), msg:
+                        print "Error accessing log "+idLog, msg
+                        continue
                 else:
                     with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                         if self.verbose:
