@@ -6,18 +6,17 @@ import re
 import sys
 
 class XmlHandler(handler.ContentHandler):
-    tag = ""
+    tag = "" #previous tag name
     breakCache =False
-    previous = ''
 
     def __init__(self, logbookName):
         self.fw = codecs.open(logbookName, 'w', 'utf-8', buffering = 0)
 
     def startElement(self, name, attrs):
         self.current_content = ""
-        if name == 'post' and XmlHandler.tag == 'text' or  XmlHandler.tag == 'images':
+        if name == 'post' and XmlHandler.tag == 'text' or  XmlHandler.tag == 'images': #if same day
             XmlHandler.breakCache = True
-        if name == 'post' and XmlHandler.tag == 'date' :
+        if name == 'post' and XmlHandler.tag == 'date' : #if new day
             XmlHandler.breakCache = False                        
         XmlHandler.tag = name 
         
@@ -78,7 +77,6 @@ class XmlHandler(handler.ContentHandler):
         self.fw.write(u"""<div class="date">\n<h2 class="date-header">%s</h2>\n</div>\n"""%self.current_content)
 
     def post(self):
-
         if XmlHandler.breakCache == True:
             self.fw.write('<div class="post-banner"></div>\n')
             XmlHandler.breakCache = False
@@ -150,7 +148,3 @@ if __name__ == "__main__":
         print "That's all, folks!"
     else:
         usage()
-
-
-
-
