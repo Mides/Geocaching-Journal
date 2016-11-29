@@ -8,6 +8,7 @@ import sys
 class XmlHandler(handler.ContentHandler):
     tag = ""
     breakCache =False
+    previous = ''
 
     def __init__(self, logbookName):
         self.fw = codecs.open(logbookName, 'w', 'utf-8', buffering = 0)
@@ -16,6 +17,8 @@ class XmlHandler(handler.ContentHandler):
         self.current_content = ""
         if name == 'post' and XmlHandler.tag == 'text' or  XmlHandler.tag == 'images':
             XmlHandler.breakCache = True
+        if name == 'post' and XmlHandler.tag == 'date' :
+            XmlHandler.breakCache = False                        
         XmlHandler.tag = name 
         
     def characters(self, content):
@@ -24,23 +27,19 @@ class XmlHandler(handler.ContentHandler):
     def endElement(self, name):
         if name == "title":
             self.title()
-        elif name == "date":
-            self.date()
-        elif name == "post":
-            self.post()
-
-        elif name == "text":
-            self.text() 
-                
         elif name == "source":
-            self.source()                        
-
+            self.source()   
+        elif name == "date":
+            self.date()     
+        elif name == "post":
+            self.post()     
+        elif name == "text":
+            self.text()       
         elif name == "description":
             self.description()
-            
         elif name == "images":
             self.images()            
-     
+
     def title(self):
         self.fw.write(u"""<!DOCTYPE html>
                     <html>
@@ -67,22 +66,24 @@ class XmlHandler(handler.ContentHandler):
         self.fw.write('<title>%s</title>'% self.current_content.encode('utf-8'))
         fields = self.current_content.encode('utf-8').split("|") 
         self.fw.write(u"""
-                    <link rel="stylesheet" type="text/css" href="logbook.css" media="all">
+                    <link rel="stylesheet" type="text/css" href="logbook.css" media="all" />
                     </head>
                     <body>
                     <div class="header">
                     <h1><a href="%s" target="_blank">%s</a></h1>\n""" %(fields[1], fields[0]))     
 
     def description(self):
-        self.fw.write(u"""<p class="description">%s</p>\n</div>\n"""%self.current_content.encode('utf-8'))
+        self.fw.write(u"""<p class="description">%s</p>\n</div>\n<div class="main">\n"""%self.current_content.encode('utf-8'))
 
     def date(self):
-        self.fw.write(u"""<div class="main">\n<div class="date">\n<h2 class="date-header">%s</h2>\n</div>\n"""%self.current_content)
+        self.fw.write(u"""<div class="date">\n<h2 class="date-header">%s</h2>\n</div>\n"""%self.current_content)
 
     def post(self):
+
         if XmlHandler.breakCache == True:
             self.fw.write('<div class="post-banner"></div>\n')
-            XmlHandler.breakCache = False                    
+            XmlHandler.breakCache = False
+                    
         fields = self.current_content.split('|')
         
         self.fw.write(u"""<div class="post-entry">\n<h3 class="post-title">
@@ -94,27 +95,26 @@ class XmlHandler(handler.ContentHandler):
         </div>\n<div style="clear: both;" />\n</h3>\n"""%(fields[1], fields[0], fields[3], fields[2]))
 
     def text(self):
-        self.fw.write(u"""%s""" %self.current_content)
+        self.fw.write(u"""%s</div>\n""" %self.current_content)
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
-        self.fw.write('<table class="table-pictures"><tr><td>') 
+        self.fw.write('<div><table class="table-pictures"><tr><td>') 
         for index, image in enumerate(data):
             match = re.search('<comment>(.*?)</comment>', image, re.S)
             name =  match.group(1)            
             match = re.search('image>(.*?)<', image, re.S)
             pictureScr = match.group(1) 
             pictureHttp = pictureScr.replace("/display","")  
-            self.fw.write(u'''<table class="picture" style=""><tbody><tr>
-                        <td><a href="javascript:popstatic('%s','.');"><img  src="%s"></a></td>
-                        </tr><tr>
-                        <td class="caption">%s</td></tr></tbody></table></td><td>'''%(pictureHttp, pictureScr, name))
+            self.fw.write(u'''<table class="picture" style=""><tbody><tr><td>
+                        <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
+                        <tr><td class="caption">%s</td></tr></tbody></table></td><td>'''%(pictureHttp, pictureScr, name))
             if (index + 1) %3  == 0:
                 self.fw.write('</tr>\n<tr>')
-        self.fw.write('<td></tr></table>\n</div>\n')
+        self.fw.write('</td></tr></table>\n</div>\n')
 
     def source(self):
-        self.fw.write(u'''\n<h2 class="date-header">%s</h2>\n</div>\n</body>\n</html>'''%self.current_content.encode('utf-8'))
+        self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</body>\n</html>'''%self.current_content.encode('utf-8'))
 
 if __name__ == "__main__":
     def usage():
