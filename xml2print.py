@@ -62,9 +62,8 @@ class XmlHandler(handler.ContentHandler):
                     //-->
                     </script>
                     """)
-        
-        self.fw.write('<title>%s</title>'% self.current_content.encode('utf-8'))
-        fields = self.current_content.encode('utf-8').split("|") 
+        self.fw.write('<title>%s</title>'% self.current_content)
+        fields = self.current_content.split("|") 
         self.fw.write(u"""
                     <link rel="stylesheet" type="text/css" href="logbook.css" media="all" />
                     </head>
@@ -73,7 +72,7 @@ class XmlHandler(handler.ContentHandler):
                     <h1><a href="%s" target="_blank">%s</a></h1>\n""" %(fields[1], fields[0]))     
 
     def description(self):
-        self.fw.write(u"""<p class="description">%s</p>\n</div>\n<div class="main">\n"""%self.current_content.encode('utf-8'))
+        self.fw.write(u"""<p class="description">%s</p>\n</div>\n<div class="main">\n"""%self.current_content)
 
     def date(self):
         self.fw.write(u"""<div class="date">\n<h2 class="date-header">%s</h2>\n</div>\n"""%self.current_content)
@@ -83,9 +82,7 @@ class XmlHandler(handler.ContentHandler):
         if XmlHandler.breakCache == True:
             self.fw.write('<div class="post-banner"></div>\n')
             XmlHandler.breakCache = False
-                    
         fields = self.current_content.split('|')
-        
         self.fw.write(u"""<div class="post-entry">\n<h3 class="post-title">
         <div class="alignleft">
         <a href="%s" target="_blank">%s</a>
@@ -114,7 +111,7 @@ class XmlHandler(handler.ContentHandler):
         self.fw.write('</td></tr></table>\n</div>\n')
 
     def source(self):
-        self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</body>\n</html>'''%self.current_content.encode('utf-8'))
+        self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</body>\n</html>'''%self.current_content)
 
 if __name__ == "__main__":
     def usage():
