@@ -130,7 +130,7 @@ if __name__ == "__main__":
     except getopt.GetoptError:
         usage()
 
-    printing = False
+    printing = False #option non implémentée
     groupPanoramas = False
     for opt, arg in opts:
         if opt == '-h':
