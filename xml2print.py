@@ -102,7 +102,7 @@ class XmlHandler(handler.ContentHandler):
             name  = match.group(3)
             pictureScr =  match.group(1)
             pictureHttp = pictureScr.replace("/display","")  
-            self.fw.write(u'''\n<table class="picture" style="">\n<tr>\n<td>
+            self.fw.write(u'''\n<table class="picture" style="">\n<tbody>\n<tr>\n<td>
                         <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
                         <tr><td class="caption">%s</td></tr>\n</table>'''%(pictureHttp, pictureScr, name))
             if (index + 1) %3  == 0: # create second line main table
@@ -110,7 +110,7 @@ class XmlHandler(handler.ContentHandler):
             elif counterImage < len(data): #if not last image
                 self.fw.write('</td><td>') 
                 counterImage = 0               
-        self.fw.write('</td></tr>\n</table>\n</div>\n')
+        self.fw.write('</td></tr>\n</tbody>\n</table>\n</div>\n')
 
     def source(self):
         self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</html>'''%self.current_content)
