@@ -96,11 +96,10 @@ class XmlHandler(handler.ContentHandler):
         data = self.current_content.strip('\n').split('\n')
         self.fw.write('<div><table class="table-pictures"><tr><td>') 
         for index, image in enumerate(data):
-            match = re.search('<comment>(.*?)</comment>', image, re.S)
-            name =  match.group(1)            
-            match = re.search('image>(.*?)<', image, re.S)
-            pictureScr = match.group(1) 
-            pictureHttp = pictureScr.replace("/display","")  
+            match =  re.search('image>(.*?)<(.*)<comment>(.*?)</comment>', image, re.S)
+            name  = match.group(3)
+            pictureScr =  match.group(1)
+            pictureHttp = pictureScr.replace("/display","")            
             self.fw.write(u'''<table class="picture" style=""><tbody><tr><td>
                         <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
                         <tr><td class="caption">%s</td></tr></tbody></table></td><td>'''%(pictureHttp, pictureScr, name))
