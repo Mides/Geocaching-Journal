@@ -113,7 +113,7 @@ class XmlHandler(handler.ContentHandler):
         self.fw.write('</td></tr>\n</table>\n</div>\n')
 
     def source(self):
-        self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</html>'''%self.current_content)
+        self.fw.write(u'''</div>\n<div>\n<h2 class="footer">%s</h2>\n</div>\n</html>'''%self.current_content)
 
 if __name__ == "__main__":
     def usage():
