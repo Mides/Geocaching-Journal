@@ -94,7 +94,7 @@ class XmlHandler(handler.ContentHandler):
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
-        breakLineNumber = (2 if len(data) <= 4 else 3) # 2 column if number pictures <= 4 
+        breakLineNumber = (2 if len(data) == 4 else 3) # 2 column if number pictures <= 4 
         self.fw.write('<div>\n<table class="table-pictures">\n<tbody>\n<tr><td>')
         counterImage = 0        
         for index, image in enumerate(data):
