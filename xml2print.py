@@ -100,12 +100,12 @@ class XmlHandler(handler.ContentHandler):
         for index, image in enumerate(data):
             counterImage += 1
             match =  re.search('image>(.*?)<(.*)<comment>(.*?)</comment>', image, re.S)
-            name  = match.group(3)
+            caption  = match.group(3)
             pictureScr =  match.group(1)
             pictureHttp = pictureScr.replace("/display","")  
             self.fw.write(u'''\n<table class="picture" style="">\n<tr>\n<td>
                         <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
-                        <tr><td class="caption">%s</td></tr>\n</table>'''%(pictureHttp, pictureScr, name))
+                        <tr><td class="caption">%s</td></tr>\n</table>'''%(pictureHttp, pictureScr, caption))
             if (index + 1) %breakLineNumber  == 0: # create second line main table
                 self.fw.write('</td></tr><tr><td>')
             elif counterImage < len(data): #if not last image
