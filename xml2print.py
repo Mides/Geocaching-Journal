@@ -94,21 +94,26 @@ class XmlHandler(handler.ContentHandler):
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
-        self.fw.write('<div><table class="table-pictures"><tr><td>') 
+        self.fw.write('<div>\n<table class="table-pictures">\n<tr><td>')
+        counterImage = 0        
         for index, image in enumerate(data):
+            counterImage += 1
             match =  re.search('image>(.*?)<(.*)<comment>(.*?)</comment>', image, re.S)
             name  = match.group(3)
             pictureScr =  match.group(1)
-            pictureHttp = pictureScr.replace("/display","")            
-            self.fw.write(u'''<table class="picture" style=""><tbody><tr><td>
+            pictureHttp = pictureScr.replace("/display","")  
+            self.fw.write(u'''\n<table class="picture" style="">\n<tr>\n<td>
                         <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
-                        <tr><td class="caption">%s</td></tr></tbody></table></td><td>'''%(pictureHttp, pictureScr, name))
-            if (index + 1) %3  == 0:
-                self.fw.write('</tr>\n<tr>')
-        self.fw.write('</td></tr></table>\n</div>\n')
+                        <tr><td class="caption">%s</td></tr>\n</table>'''%(pictureHttp, pictureScr, name))
+            if (index + 1) %3  == 0: # create second line main table
+                self.fw.write('</td></tr><tr><td>')
+            elif counterImage < len(data): #if not last image
+                self.fw.write('</td><td>') 
+                counterImage = 0               
+        self.fw.write('</td></tr>\n</table>\n</div>\n')
 
     def source(self):
-        self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</body>\n</html>'''%self.current_content)
+        self.fw.write(u'''<div>\n<h2 class="date-header">%s</h2>\n</div>\n</div>\n</html>'''%self.current_content)
 
 if __name__ == "__main__":
     def usage():
