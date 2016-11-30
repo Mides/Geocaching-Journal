@@ -94,6 +94,7 @@ class XmlHandler(handler.ContentHandler):
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
+        breakLineNumber = (2 if len(data) <= 4 else 3) # 2 column if number pictures <= 4 
         self.fw.write('<div>\n<table class="table-pictures">\n<tr><td>')
         counterImage = 0        
         for index, image in enumerate(data):
@@ -105,7 +106,7 @@ class XmlHandler(handler.ContentHandler):
             self.fw.write(u'''\n<table class="picture" style="">\n<tbody>\n<tr>\n<td>
                         <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
                         <tr><td class="caption">%s</td></tr>\n</table>'''%(pictureHttp, pictureScr, name))
-            if (index + 1) %3  == 0: # create second line main table
+            if (index + 1) %breakLineNumber  == 0: # create second line main table
                 self.fw.write('</td></tr><tr><td>')
             elif counterImage < len(data): #if not last image
                 self.fw.write('</td><td>') 
