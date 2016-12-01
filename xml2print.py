@@ -84,25 +84,31 @@ class XmlHandler(handler.ContentHandler):
         self.fw.write(buffeur)
 
     def post(self):
+        buffeur =''
         if XmlHandler.breakCache == True:
-            self.fw.write('<div class="post-banner"></div>\n')
+            buffeur = '<div class="post-banner"></div>\n'
             XmlHandler.breakCache = False
         fields = self.current_content.split('|')
-        self.fw.write(u"""<div class="post-entry">\n<h3 class="post-title">
-        <div class="alignleft">
-        <a href="%s" target="_blank">%s</a>
-        </div>
-        <div class="alignright">
-        <a href="%s">%s</a>
-        </div>\n<div style="clear: both;" />\n</h3>\n"""%(fields[1], fields[0], fields[3], fields[2]))
+        buffeur += '<div class="post-entry">\n'
+        buffeur += '<h3 class="post-title">\n'
+        buffeur += '<div class="alignleft"><a href="%s" target="_blank">%s</a></div>\n'%(fields[1], fields[0])
+        buffeur += '<div class="alignright"><a href="%s">%s</a></div>\n'%(fields[3], fields[2])
+        buffeur += '<div style="clear: both;" />\n'
+        buffeur += '</h3>\n'
+        self.fw.write(buffeur)
 
     def text(self):
-        self.fw.write(u"""%s</div>\n""" %self.current_content)
+        buffeur = self.current_content
+        buffeur += '</div>\n' #<div>class="post-entry
+        self.fw.write(buffeur)
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
-        breakLineNumber = (2 if len(data) == 4 else 3) # 2 column if number pictures <= 4 
-        self.fw.write('<div>\n<table class="table-pictures">\n<tbody>\n<tr><td>')
+        breakLineNumber = (2 if len(data) == 4 else 3) # 2 column if number pictures = 4 
+        buffeur = '<div>\n'
+        buffeur += '<table class="table-pictures">\n' #master table
+        buffeur += '<tbody>\n'
+        buffeur += '<tr><td>\n'
         counterImage = 0        
         for index, image in enumerate(data):
             counterImage += 1
@@ -110,15 +116,22 @@ class XmlHandler(handler.ContentHandler):
             caption  = match.group(3)
             pictureScr =  match.group(1)
             pictureHttp = pictureScr.replace("/display","")  
-            self.fw.write(u'''\n<table class="picture" style="">\n<tr>\n<td>
-                        <a href="javascript:popstatic('%s','.');"><img  src="%s" /></a></td></tr>
-                        <tr><td class="caption">%s</td></tr>\n</table>'''%(pictureHttp, pictureScr, caption))
+            buffeur += '<table class="picture" style="">\n' #child table
+            buffeur += '<tr>\n<td>\n'
+            buffeur += '<a href="javascript:popstatic(\'%s\',\'.\');"><img  src="%s" /></a>\n'%(pictureHttp, pictureScr)
+            buffeur += '</td></tr>\n'
+            buffeur += '<tr><td class="caption">%s</td></tr>\n'%caption
+            buffeur += '</table>' #child table
             if (index + 1) %breakLineNumber  == 0: # create second line main table
-                self.fw.write('</td></tr><tr><td>')
+                buffeur += '</td></tr><tr><td>' # break line master table
             elif counterImage < len(data): #if not last image
-                self.fw.write('</td><td>') 
-                counterImage = 0               
-        self.fw.write('</td></tr>\n</tbody>\n</table>\n</div>\n')
+                buffeur +='</td><td>' 
+                counterImage = 0  
+        buffeur += '</td></tr>\n'
+        buffeur += '</tbody>\n'              
+        buffeur += '</table>\n' #master table
+        buffeur += '</div>\n'
+        self.fw.write(buffeur)
 
     def source(self):
         buffeur = ('</div>\n') #<div class="main"
