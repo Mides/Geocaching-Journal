@@ -178,7 +178,6 @@ class Logbook(object):
             self.nDates += 1
             dayLogs = days[dateLog]
             dayLogs.reverse()
-            print len(dayLogs)
             self.fXML.write('<date>%s - (%s logs) </date>\n'%(self.__formatDate(dateLog), len(dayLogs)))
             for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
                 self.nLogs += 1
