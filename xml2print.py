@@ -172,9 +172,9 @@ if __name__ == "__main__":
         if opt == '-h':
             usage()
         elif opt == "-p":
-            printing = True
+            printing = True #option non implémentée
         elif opt == "-g":
-            groupPanoramas = True
+            groupPanoramas = True #option non implémentée
 
     if len(args) == 2:
         parser = make_parser()
