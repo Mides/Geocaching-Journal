@@ -116,6 +116,7 @@ class Logbook(object):
                     img = re.sub('/display/', '/', img)
                 self.fXML.write("<![CDATA[<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>]]>\n"%(typeImage, img, caption, typeImage))
             self.fXML.write('</images>\n')
+            
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
@@ -175,10 +176,9 @@ class Logbook(object):
             if self.endDate and dateLog > self.endDate:
                 continue
             self.nDates += 1
-            self.fXML.write('<date>%s</date>\n'%self.__formatDate(dateLog))
-
             dayLogs = days[dateLog]
             dayLogs.reverse()
+            self.fXML.write('<date>%s - (%s logs) </date>\n'%(self.__formatDate(dateLog), len(dayLogs)))
             for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
                 self.nLogs += 1
                 # logId, cacheId or tbID, title, type, nature
