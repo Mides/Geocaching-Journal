@@ -115,6 +115,7 @@ class XmlHandler(handler.ContentHandler):
 
     def source(self):
         self.fw.write(u'''</div>\n<div>\n<h2 class="footer">%s</h2>\n</div>\n</html>'''%self.current_content)
+        self.fw.close()
 
 if __name__ == "__main__":
     def usage():
@@ -142,14 +143,14 @@ if __name__ == "__main__":
             groupPanoramas = True
 
     if len(args) == 2:
-        try:
+        #try:
             #xml2print(args[0], args[1], printing, groupPanoramas)
             parser = make_parser()
             b = XmlHandler(args[1])
             parser.setContentHandler(b)
             parser.parse(args[0])            
-        except Exception, msg:
-            print "Problem:",msg
-        print "That's all, folks!"
+        #except Exception, msg:
+            #print "Problem:",msg
+        #print "That's all, folks!"
     else:
         usage()
