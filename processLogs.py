@@ -148,7 +148,7 @@ class Logbook(object):
         for tr in listTr:
             td = re.finditer('<td>(.*?)</td>', tr, re.S)
             listTd = [result.group(1) for result in td]
-            dateLog = self.__normalizeDate(listTd[2].strip())
+            dateLog = self.normalizeDate(listTd[2].strip())
             typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
             idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
@@ -178,44 +178,61 @@ class Logbook(object):
             self.nDates += 1
             dayLogs = days[dateLog]
             dayLogs.reverse()
-            self.fXML.write('<date>%s - (%s logs) </date>\n'%(self.__formatDate(dateLog), len(dayLogs)))
+            self.fXML.write('<date>%s - (%s logs) </date>\n'%(self.formatDate(dateLog), len(dayLogs)))
             for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
                 self.nLogs += 1
-                # logId, cacheId or tbID, title, type, nature
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
-
-                # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
                 url, dirLog = (('seek', 'Logs') if natureLog == 'C' else ('track', 'LogsTB'))
-                dirLog = dirLog + '/_%s_/'%idLog[0]
-                if not os.path.isfile(dirLog+idLog) or self.refresh:
-                    if not os.path.isdir(dirLog):
-                        print "Creating directory "+dirLog
-                        os.makedirs(dirLog)
-                    url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
-                    print "Fetching log", url
-                    try:
-                        dataLog = urllib2.urlopen(url).read().decode('utf-8')
-                        print "Saving log file "+idLog
-                        with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
-                            fw.write(dataLog)
-                    except urllib2.HTTPError, e:
-                        print "Error accessing log " + idLog,e
-                        continue
+                if self.refresh :
+                    dataLog = self.loadDataFromUrl(url, dirLog, idLog, natureLog)                    
+                elif self.isFileData(dirLog, idLog):
+                    dataLog = self.loadDataFromFile(dirLog, idLog, titleCache)                    
                 else:
-                    with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
-                        if self.verbose:
-                            print "Loading for cache " + titleCache
-                        dataLog = fr.read()
-                # grabbing information from the log page
-                self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
+                    dataLog = self.loadDataFromUrl(url, dirLog, idLog, natureLog)
+                if dataLog:
+                    # grabbing information from the log page
+                    self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
         self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
         self.fXML.write('</document>')       
         self.fXML.close()
         print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
         print 'Result file:', self.fNameOutput
 
-    def __formatDate(self, date):
+    def isFileData(self, dirLog, idLog):
+        # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
+        dirLog = dirLog + '/_%s_/'%idLog[0]
+        if not os.path.isfile(dirLog+idLog) or self.refresh:
+            if not os.path.isdir(dirLog):
+                print "Creating directory "+dirLog
+                os.makedirs(dirLog)
+            return False
+        else:
+            return True
+
+    def loadDataFromFile(self, dirLog, idLog, titleCache):
+        with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
+            if self.verbose:
+                print "Loading for cache " + titleCache
+            dataLog = fr.read()  
+        return dataLog
+                  
+    def loadDataFromUrl(self, url, dirLog, idLog, natureLog):
+        dirLog = dirLog + '/_%s_/'%idLog[0]
+        url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog        
+        print "Fetching log", url
+        try:
+            req = urllib2.Request(url)
+            dataLog = urllib2.urlopen(req, timeout = 15).read().decode('utf-8')
+            print "Saving log file "+idLog
+            with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
+                fw.write(dataLog)            
+        except (urllib2.HTTPError, urllib2.URLError), e:
+            print "Error accessing log " + idLog,e
+            dataLog = None 
+        return dataLog       
+
+    def formatDate(self, date):
         """
         format date in readable form, according to local settings
         """
@@ -231,7 +248,7 @@ class Logbook(object):
         date = re.sub(' 0', ' ', date)
         return date
 
-    def __normalizeDate(self, date):
+    def normalizeDate(self, date):
         """
         mormalize date in YYYY/MM/DD form
         """
