@@ -71,10 +71,16 @@ class XmlHandler(handler.ContentHandler):
                     <h1><a href="%s" target="_blank">%s</a></h1>\n""" %(fields[1], fields[0]))     
 
     def description(self):
-        self.fw.write(u"""<p class="description">%s</p>\n</div>\n<div class="main">\n"""%self.current_content)
+        buffeur = '<p class="description">%s</p>\n'%self.current_content
+        buffeur += '</div>\n'
+        buffeur += '<div class="main">\n'
+        self.fw.write(buffeur)
 
     def date(self):
-        self.fw.write(u"""<div class="date">\n<h2 class="date-header">%s</h2>\n</div>\n"""%self.current_content)
+        buffeur = '<div class="date">\n'
+        buffeur += '<h2 class="date-header">%s</h2>\n'%self.current_content
+        buffeur += '</div>\n'
+        self.fw.write(buffeur)
 
     def post(self):
         if XmlHandler.breakCache == True:
@@ -114,7 +120,13 @@ class XmlHandler(handler.ContentHandler):
         self.fw.write('</td></tr>\n</tbody>\n</table>\n</div>\n')
 
     def source(self):
-        self.fw.write(u'''</div>\n<div>\n<h2 class="footer">%s</h2>\n</div>\n</html>'''%self.current_content)
+        buffeur = ('</div>\n') #<div class="main"
+        buffeur += ('<div>\n')
+        buffeur += ('<h2 class="footer">%s</h2>\n'%self.current_content)
+        buffeur += ('</div>\n')
+        buffeur += ('</html>')
+        self.fw.write(buffeur)        
+        
         self.fw.close()
 
 if __name__ == "__main__":
