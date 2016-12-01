@@ -227,9 +227,9 @@ class Logbook(object):
         except:
             pass
         date = time.strftime('%A %d %B %Y', time.localtime(t))
-        date = date.decode(locale.getpreferredencoding()).encode('utf8')
+        date = date.decode(locale.getpreferredencoding())
         date = re.sub(' 0', ' ', date)
-        return date.decode('utf-8')
+        return date
 
     def __normalizeDate(self, date):
         """
