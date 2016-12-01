@@ -109,6 +109,14 @@ class XmlHandler(handler.ContentHandler):
         buffeur += '<table class="table-pictures">\n' #master table
         buffeur += '<tbody>\n'
         buffeur += '<tr><td>\n'
+        buffeur = self.childTable(data, buffeur, breakLineNumber)
+        buffeur += '</td></tr>\n'
+        buffeur += '</tbody>\n'              
+        buffeur += '</table>\n' #master table
+        buffeur += '</div>\n'
+        self.fw.write(buffeur)
+
+    def childTable(self, data, buffeur, breakLineNumber):
         counterImage = 0        
         for index, image in enumerate(data):
             counterImage += 1
@@ -126,12 +134,8 @@ class XmlHandler(handler.ContentHandler):
                 buffeur += '</td></tr><tr><td>' # break line master table
             elif counterImage < len(data): #if not last image
                 buffeur +='</td><td>' 
-                counterImage = 0  
-        buffeur += '</td></tr>\n'
-        buffeur += '</tbody>\n'              
-        buffeur += '</table>\n' #master table
-        buffeur += '</div>\n'
-        self.fw.write(buffeur)
+                counterImage = 0    
+        return buffeur    
 
     def source(self):
         buffeur = ('</div>\n') #<div class="main"
