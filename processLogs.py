@@ -218,6 +218,9 @@ class Logbook(object):
         return dataLog
                   
     def loadDataFromUrl(self, url, dirLog, idLog, natureLog):
+        """
+        download and save data from url
+        """
         dirLog = dirLog + '/_%s_/'%idLog[0]
         url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog        
         print "Fetching log", url
