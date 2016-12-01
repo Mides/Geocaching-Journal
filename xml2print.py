@@ -10,6 +10,8 @@ class XmlHandler(handler.ContentHandler):
     breakCache =False
 
     def __init__(self, logbookName):
+        self.numberDays = 0
+        self.numberLogs = 0
         try:
             self.fw = codecs.open(logbookName, 'w', 'utf-8', buffering = 0)
         except IOError, e:
@@ -33,8 +35,10 @@ class XmlHandler(handler.ContentHandler):
             self.source()   
         elif name == "date":
             self.date()     
+            self.numberDays += 1
         elif name == "post":
             self.post()     
+            self.numberLogs += 1
         elif name == "text":
             self.text()       
         elif name == "description":
@@ -104,19 +108,19 @@ class XmlHandler(handler.ContentHandler):
 
     def images(self):
         data = self.current_content.strip('\n').split('\n')
-        breakLineNumber = (2 if len(data) == 4 else 3) # 2 column if number pictures = 4 
+        breakLineMaster = (2 if len(data) == 4 else 3) # 2 column if number pictures = 4 
         buffeur = '<div>\n'
         buffeur += '<table class="table-pictures">\n' #master table
         buffeur += '<tbody>\n'
         buffeur += '<tr><td>\n'
-        buffeur = self.childTable(data, buffeur, breakLineNumber)
+        buffeur = self.childTable(data, buffeur, breakLineMaster)
         buffeur += '</td></tr>\n'
         buffeur += '</tbody>\n'              
         buffeur += '</table>\n' #master table
         buffeur += '</div>\n'
         self.fw.write(buffeur)
 
-    def childTable(self, data, buffeur, breakLineNumber):
+    def childTable(self, data, buffeur, breakLineMaster):
         counterImage = 0        
         for index, image in enumerate(data):
             counterImage += 1
@@ -130,7 +134,7 @@ class XmlHandler(handler.ContentHandler):
             buffeur += '</td></tr>\n'
             buffeur += '<tr><td class="caption">%s</td></tr>\n'%caption
             buffeur += '</table>' #child table
-            if (index + 1) %breakLineNumber  == 0: # create second line main table
+            if (index + 1) %breakLineMaster  == 0: # create second line main table
                 buffeur += '</td></tr><tr><td>' # break line master table
             elif counterImage < len(data): #if not last image
                 buffeur +='</td><td>' 
@@ -144,8 +148,8 @@ class XmlHandler(handler.ContentHandler):
         buffeur += ('</div>\n')
         buffeur += ('</html>')
         self.fw.write(buffeur)        
-        
         self.fw.close()
+        print 'Number days : %s - Number logs : %s'%(self.numberDays, self.numberLogs)
 
 if __name__ == "__main__":
     def usage():
