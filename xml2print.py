@@ -10,8 +10,11 @@ class XmlHandler(handler.ContentHandler):
     breakCache =False
 
     def __init__(self, logbookName):
-        self.fw = codecs.open(logbookName, 'w', 'utf-8', buffering = 0)
-
+        try:
+            self.fw = codecs.open(logbookName, 'w', 'utf-8', buffering = 0)
+        except IOError, e:
+            print e
+            
     def startElement(self, name, attrs):
         self.current_content = ""
         if name == 'post' and XmlHandler.tag == 'text' or  XmlHandler.tag == 'images': #if same day
@@ -143,14 +146,13 @@ if __name__ == "__main__":
             groupPanoramas = True
 
     if len(args) == 2:
-        #try:
-            #xml2print(args[0], args[1], printing, groupPanoramas)
-            parser = make_parser()
-            b = XmlHandler(args[1])
-            parser.setContentHandler(b)
-            parser.parse(args[0])            
-        #except Exception, msg:
-            #print "Problem:",msg
-        #print "That's all, folks!"
+        parser = make_parser()
+        b = XmlHandler(args[1])
+        parser.setContentHandler(b)
+        try:
+            parser.parse(args[0])
+        except IOError, e:
+            print e            
+        print "That's all, folks!"
     else:
         usage()
