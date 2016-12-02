@@ -62,9 +62,6 @@ class Logbook(object):
         self.refresh = refresh
         self.excluded = excluded
 
-        self.nDates = 0          # number of processed dates
-        self.nLogs = 0           # number of processed logs
-
     def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         """
         analyses the HTML content of a log page
@@ -129,6 +126,11 @@ class Logbook(object):
         local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
         """
 
+        numberDaysSelected = 0          # number of processed dates
+        numberLogSelected = 0           # number of processed logs
+        allLogs = 0
+        daysLogs = {}
+        
         try:
             with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
@@ -138,8 +140,7 @@ class Logbook(object):
             self.fXML.write('<title><![CDATA[' + bookTitle + ']]></title>\n')
             self.fXML.write('<description>' + bookDescription + '</description>\n')
 
-        allLogs = 0
-        days = {}
+
 
         idLog = None
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
@@ -164,12 +165,12 @@ class Logbook(object):
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog <> '':
                 try:
-                    days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
+                    daysLogs[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
                 except KeyError:
-                    days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
+                    daysLogs[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
                 if self.verbose:
                     print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
-        dates = days.keys()
+        dates = daysLogs.keys()
         dates.sort()
         for dateLog in dates:
             # check if date is in the correct interval
@@ -177,12 +178,12 @@ class Logbook(object):
                 continue
             if self.endDate and dateLog > self.endDate:
                 continue
-            self.nDates += 1
-            dayLogs = days[dateLog]
+            numberDaysSelected += 1
+            dayLogs = daysLogs[dateLog]
             dayLogs.reverse()
             self.fXML.write('<date>%s - (%s logs) </date>\n'%(self.formatDate(dateLog), len(dayLogs)))
             for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
-                self.nLogs += 1
+                numberLogSelected += 1
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
                 url, dirLog = (('seek', 'Logs') if natureLog == 'C' else ('track', 'LogsTB'))
@@ -197,7 +198,7 @@ class Logbook(object):
         self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
         self.fXML.write('</document>')       
         self.fXML.close()
-        print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
+        print 'Logs: ', numberLogSelected, '/', allLogs, 'Days:', numberDaysSelected, '/', len(dates)
         print 'Result file:', self.fNameOutput
 
     def isFileData(self, dirLog, idLog):
