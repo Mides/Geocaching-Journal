@@ -34,6 +34,8 @@ import time
 import locale
 import urllib2
 import codecs
+import StringIO
+import gzip 
 
 #os.environ['LC_ALL'] = 'fr_FR.UTF-8'
 #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -226,8 +228,15 @@ class Logbook(object):
         url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog        
         print "Fetching log", url
         try:
-            req = urllib2.Request(url)
-            dataLog = urllib2.urlopen(req, timeout = 15).read().decode('utf-8')
+            request = urllib2.Request(url)
+            request.add_header('Accept-encoding', 'gzip')
+            response = urllib2.urlopen(request, timeout = 15)
+            if response.info().get('Content-Encoding') == 'gzip':
+                buf = StringIO(response.read())
+                f = gzip.GzipFile(fileobj=buf)
+                dataLog = f.read().decode('utf-8')
+            else:
+                dataLog = response.read().decode('utf-8')
             print "Saving log file "+idLog
             with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                 fw.write(dataLog)            
