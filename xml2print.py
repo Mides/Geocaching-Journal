@@ -30,23 +30,23 @@ class XmlHandler(handler.ContentHandler):
 
     def endElement(self, name):
         if name == "title":
-            self.constructTitle()
+            self.title()
         elif name == "source":
-            self.constructSource()   
+            self.source()   
         elif name == "date":
-            self.constructDate()     
+            self.date()     
             self.numberDays += 1
         elif name == "post":
-            self.constructPost()     
+            self.post()     
             self.numberLogs += 1
         elif name == "text":
-            self.constructText()       
+            self.text()       
         elif name == "description":
-            self.constructDescription()
+            self.description()
         elif name == "images":
-            self.constructMasterTable()            
+            self.images()            
 
-    def constructTitle(self):
+    def title(self):
         buffeur = '<!DOCTYPE html>\n'
         buffeur += '<head>\n'
         buffeur += '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />\n'
@@ -75,19 +75,19 @@ class XmlHandler(handler.ContentHandler):
         buffeur += '<h1><a href="%s" target="_blank">%s</a></h1>\n' %(fields[1], fields[0])
         self.fw.write(buffeur)        
 
-    def constructDescription(self):
+    def description(self):
         buffeur = '<p class="description">%s</p>\n'%self.current_content
         buffeur += '</div>\n' #div class header
         buffeur += '<div class="main">\n'
         self.fw.write(buffeur)
 
-    def constructDate(self):
+    def date(self):
         buffeur = '<div class="date">\n'
         buffeur += '<h2 class="date-header">%s</h2>\n'%self.current_content
         buffeur += '</div>\n'
         self.fw.write(buffeur)
 
-    def constructPost(self):
+    def post(self):
         buffeur =''
         if XmlHandler.breakCache == True:
             buffeur = '<div class="post-banner"></div>\n'
@@ -101,26 +101,26 @@ class XmlHandler(handler.ContentHandler):
         buffeur += '</h3>\n'
         self.fw.write(buffeur)
 
-    def constructText(self):
+    def text(self):
         buffeur = self.current_content
         buffeur += '</div>\n' #<div>class="post-entry
         self.fw.write(buffeur)
 
-    def constructMasterTable(self):
+    def images(self):
         data = self.current_content.strip('\n').split('\n')
         breakLineMaster = (2 if len(data) == 4 else 3) # 2 column if number pictures = 4 
         buffeur = '<div>\n'
         buffeur += '<table class="table-pictures">\n' #master table
         buffeur += '<tbody>\n'
         buffeur += '<tr><td>\n'
-        buffeur = self.constructChildTable(data, buffeur, breakLineMaster)
+        buffeur = self.childTable(data, buffeur, breakLineMaster)
         buffeur += '</td></tr>\n'
         buffeur += '</tbody>\n'              
         buffeur += '</table>\n' #master table
         buffeur += '</div>\n'
         self.fw.write(buffeur)
 
-    def constructChildTable(self, data, buffeur, breakLineMaster):
+    def childTable(self, data, buffeur, breakLineMaster):
         counterImage = 0        
         for index, image in enumerate(data):
             counterImage += 1
@@ -141,7 +141,7 @@ class XmlHandler(handler.ContentHandler):
                 counterImage = 0    
         return buffeur    
 
-    def constructSource(self):
+    def source(self):
         buffeur = ('</div>\n') #<div class="main"
         buffeur += ('<div>\n')
         buffeur += ('<h2 class="footer">%s</h2>\n'%self.current_content)
