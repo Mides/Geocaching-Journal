@@ -186,12 +186,11 @@ class Logbook(object):
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
                 url, dirLog = (('seek', 'Logs') if natureLog == 'C' else ('track', 'LogsTB'))
-                if self.refresh :
+                if self.refresh or not self.isFileData(dirLog, idLog):
                     dataLog = self.loadDataFromUrl(url, dirLog, idLog, natureLog)                    
                 elif self.isFileData(dirLog, idLog):
                     dataLog = self.loadDataFromFile(dirLog, idLog, titleCache)                    
-                else:
-                    dataLog = self.loadDataFromUrl(url, dirLog, idLog, natureLog)
+
                 if dataLog:
                     # grabbing information from the log page
                     self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
