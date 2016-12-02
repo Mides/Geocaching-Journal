@@ -211,6 +211,7 @@ class Logbook(object):
             return True
 
     def loadDataFromFile(self, dirLog, idLog, titleCache):
+        dirLog = dirLog + '/_%s_/'%idLog[0]
         with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
             if self.verbose:
                 print "Loading for cache " + titleCache
@@ -249,6 +250,7 @@ class Logbook(object):
         date = time.strftime('%A %d %B %Y', time.localtime(t))
         date = date.decode(locale.getpreferredencoding())
         date = re.sub(' 0', ' ', date)
+        print date
         return date
 
     def normalizeDate(self, date):
