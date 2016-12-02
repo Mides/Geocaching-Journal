@@ -31,6 +31,7 @@ import re
 import os
 import sys
 import time
+import datetime
 import locale
 import urllib2
 import codecs
@@ -250,15 +251,12 @@ class Logbook(object):
         format date in readable form, according to local settings
         """
 
-        strTime = date+" 00:00:01Z"
-        t = 0
-        try:
-            t = int(time.mktime(time.strptime(strTime, "%Y/%m/%d %H:%M:%SZ")))
-        except:
-            pass
-        date = time.strftime('%A %d %B %Y', time.localtime(t))
+        try: 
+            date = datetime.datetime.strptime(date, '%Y/%m/%d').strftime('%A %d %B %Y')
+        except ValueError: 
+            date = datetime.datetime.strptime('2001/01/01', '%Y/%m/%d').strftime('%A %d %B %Y')
+        date = date.replace(' 0', ' ')
         date = date.decode(locale.getpreferredencoding())
-        date = re.sub(' 0', ' ', date)
         return date
 
     def normalizeDate(self, date):
