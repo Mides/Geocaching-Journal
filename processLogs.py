@@ -250,7 +250,6 @@ class Logbook(object):
         date = time.strftime('%A %d %B %Y', time.localtime(t))
         date = date.decode(locale.getpreferredencoding())
         date = re.sub(' 0', ' ', date)
-        print date
         return date
 
     def normalizeDate(self, date):
