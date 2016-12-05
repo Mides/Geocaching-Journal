@@ -30,7 +30,6 @@
 import re
 import os
 import sys
-import time
 import datetime
 import locale
 import urllib2
@@ -46,6 +45,15 @@ locale.setlocale(locale.LC_ALL, '')
 bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
 bookDescription = u"""<description><![CDATA[%s]]>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml]]></description>"""
 
+class Log(object):
+    def __init__(self, dateLog, typeLog, idCache, idLog, titleCache, natureLog):
+        self.dateLog = dateLog
+        self.typeLog = typeLog
+        self.idCache = idCache
+        self.idLog = idLog
+        self.titleCache = titleCache
+        self.natureLog = natureLog
+
 class Logbook(object):
     """
     Logbook : generate a list of logs with images for a geocacher
@@ -56,12 +64,70 @@ class Logbook(object):
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
         self.fNameInput = fNameInput
         self.fNameOutput = fNameOutput
-        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')
+        self.fXML = codecs.open(fNameOutput, "w", 'utf-8', buffering = 0)
         self.verbose = verbose
         self.startDate = startDate
         self.endDate = endDate
         self.refresh = refresh
         self.excluded = excluded
+
+    def processLogs(self):
+        """
+        analyse of the HTML page with all the logs of the geocacher
+        local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
+        """
+
+        numberDaysSelected = 0          # number of processed dates
+        numberLogSelected = 0           # number of processed logs
+        #allLogs = 0
+        
+        try:
+            with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
+                self.fXML.write(f.read())
+        except:
+            self.fXML.write('<?xml version="1.0" encoding="UTF-8"?>')
+            self.fXML.write('<document>\n')
+            self.fXML.write('<title><![CDATA[' + bookTitle + ']]></title>\n')
+            self.fXML.write('<description>' + bookDescription + '</description>\n')
+
+        daysLogs, allLogs, listLog =  self.searchHeaderLog()
+        listLogSorted = sorted(listLog, key = lambda log: log.dateLog)
+        #listLogSorted = sorted(listLog, key = lambda log: log.dateLog, reverse = True)
+        previousDate = ''
+        for log in listLogSorted: 
+            # check if date is in the correct interval
+            if self.startDate and log.dateLog < self.startDate:
+                continue
+            if self.endDate and log.dateLog > self.endDate:
+                continue
+            numberLogSelected += 1
+            if log.dateLog <> previousDate :
+                self.fXML.write('<date>%s</date>\n'%(self.formatDate(log.dateLog)))
+                numberDaysSelected += 1                 
+            previousDate = log.dateLog
+            
+            # building a local cache of the HTML page of each log
+            # directory: Logs and 16 sub-directories based on the first letter
+            url, dirLog = (('seek', 'Logs') if log.natureLog == 'C' else ('track', 'LogsTB'))
+            if self.refresh or not self.isFileData(dirLog, log.idLog):
+                dataLog = self.loadLogFromUrl(url, dirLog, log)                    
+            elif self.isFileData(dirLog, log.idLog):
+                dataLog = self.loadLogFromFile(dirLog, log)                    
+                # building a local cache of the HTML page of each log
+                # directory: Logs and 16 sub-directories based on the first letter
+                url, dirLog = (('seek', 'Logs') if log.natureLog == 'C' else ('track', 'LogsTB'))
+                if self.refresh or not self.isFileData(dirLog, log.idLog):
+                    dataLog = self.loadLogFromUrl(url, dirLog, log)                    
+                elif self.isFileData(dirLog, log.idLog):
+                    dataLog = self.loadLogFromFile(dirLog, log)
+            if dataLog:
+                # grabbing information from the log page
+                self.parseLog(dataLog, log.dateLog, log.idLog, log.idCache, log.titleCache, log.typeLog, log.natureLog)            
+        self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
+        self.fXML.write('</document>')       
+        self.fXML.close()
+        print 'Logs: ', numberLogSelected, '/', allLogs, 'Days:', numberDaysSelected, '/', len(listLog)
+        print 'Result file:', self.fNameOutput
 
     def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         """
@@ -96,11 +162,11 @@ class Logbook(object):
             url = re.findall('src="(.*?)" />', tagTable, re.S)
             url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
             for index, tag in enumerate(url):
-                panora = self.__isPanorama(title[index])
+                panora = self.isPanorama(title[index])
                 listeImages.append((url[index], title[index], panora))
         elif 'LogBookPanel1_ImageMain' in dataLog: #if single images
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
-            panora = self.__isPanorama(urlTitle.group(4))
+            panora = self.isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
             print u'!!!! Log without image', idLog, dateLog, u'%r'%titleCache,'>>>',typeLog
@@ -118,32 +184,25 @@ class Logbook(object):
             self.fXML.write('</images>\n')
             
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
-    def __isPanorama(self, title):
+    def isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
 
-    def processLogs(self):
-        """
-        analyse of the HTML page with all the logs of the geocacher
-        local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
-        """
 
-        numberDaysSelected = 0          # number of processed dates
-        numberLogSelected = 0           # number of processed logs
+    def isFileData(self, dirLog, idLog):
+        # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
+        dirLog = dirLog + '/_%s_/'%idLog[0]
+        if not os.path.isfile(dirLog+idLog) or self.refresh:
+            if not os.path.isdir(dirLog):
+                print "Creating directory "+dirLog
+                os.makedirs(dirLog)
+            return False
+        else:
+            return True
+
+    def searchHeaderLog(self):
         allLogs = 0
-        daysLogs = {}
-        
-        try:
-            with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
-                self.fXML.write(f.read())
-        except:
-            self.fXML.write('<?xml version="1.0" encoding="UTF-8"?>')
-            self.fXML.write('<document>\n')
-            self.fXML.write('<title><![CDATA[' + bookTitle + ']]></title>\n')
-            self.fXML.write('<description>' + bookDescription + '</description>\n')
-
-
-
-        idLog = None
+        daysLogs = {} 
+        listLog = []       
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
         tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
@@ -157,7 +216,7 @@ class Logbook(object):
             idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
             titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
-            natureLog = ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
+            natureLog = (u'C' if listTd[3].find('cache_details') > 1 else u'T') # C for Cache and T for trackable
             allLogs += 1
  
             # keeping the logs that are not excluded by -x option
@@ -165,68 +224,30 @@ class Logbook(object):
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog <> '':
+                listLog.append(Log(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
                 try:
                     daysLogs[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
                 except KeyError:
                     daysLogs[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
                 if self.verbose:
                     print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
-        dates = daysLogs.keys()
-        dates.sort()
-        for dateLog in dates:
-            # check if date is in the correct interval
-            if self.startDate and dateLog < self.startDate:
-                continue
-            if self.endDate and dateLog > self.endDate:
-                continue
-            numberDaysSelected += 1
-            dayLogs = daysLogs[dateLog]
-            dayLogs.reverse()
-            self.fXML.write('<date>%s - (%s logs) </date>\n'%(self.formatDate(dateLog), len(dayLogs)))
-            for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
-                numberLogSelected += 1
-                # building a local cache of the HTML page of each log
-                # directory: Logs and 16 sub-directories based on the first letter
-                url, dirLog = (('seek', 'Logs') if natureLog == 'C' else ('track', 'LogsTB'))
-                if self.refresh or not self.isFileData(dirLog, idLog):
-                    dataLog = self.loadDataFromUrl(url, dirLog, idLog, natureLog)                    
-                elif self.isFileData(dirLog, idLog):
-                    dataLog = self.loadDataFromFile(dirLog, idLog, titleCache)                    
+        print len(listLog)
+        return daysLogs, allLogs, listLog
 
-                if dataLog:
-                    # grabbing information from the log page
-                    self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
-        self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
-        self.fXML.write('</document>')       
-        self.fXML.close()
-        print 'Logs: ', numberLogSelected, '/', allLogs, 'Days:', numberDaysSelected, '/', len(dates)
-        print 'Result file:', self.fNameOutput
-
-    def isFileData(self, dirLog, idLog):
-        # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
-        dirLog = dirLog + '/_%s_/'%idLog[0]
-        if not os.path.isfile(dirLog+idLog) or self.refresh:
-            if not os.path.isdir(dirLog):
-                print "Creating directory "+dirLog
-                os.makedirs(dirLog)
-            return False
-        else:
-            return True
-
-    def loadDataFromFile(self, dirLog, idLog, titleCache):
-        dirLog = dirLog + '/_%s_/'%idLog[0]
-        with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
+    def loadLogFromFile(self, dirLog, log):
+        dirLog = dirLog + '/_%s_/'%log.idLog[0]
+        with codecs.open(dirLog+log.idLog, 'r', 'utf-8') as fr:
             if self.verbose:
-                print "Loading for cache " + titleCache
+                print "Loading for cache " + log.titleCache
             dataLog = fr.read()  
         return dataLog
                   
-    def loadDataFromUrl(self, url, dirLog, idLog, natureLog):
+    def loadLogFromUrl(self, url, dirLog, log):
         """
         download and save data from url
         """
-        dirLog = dirLog + '/_%s_/'%idLog[0]
-        url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog        
+        dirLog = dirLog + '/_%s_/'%log.idLog[0]
+        url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+log.idLog        
         print "Fetching log", url
         try:
             request = urllib2.Request(url)
@@ -238,11 +259,11 @@ class Logbook(object):
                 dataLog = f.read().decode('utf-8')
             else:
                 dataLog = response.read().decode('utf-8')
-            print "Saving log file "+idLog
-            with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
+            print "Saving log file "+log.idLog
+            with codecs.open(dirLog+log.idLog, 'w', 'utf-8') as fw:
                 fw.write(dataLog)            
         except (urllib2.HTTPError, urllib2.URLError), e:
-            print "Error accessing log " + idLog,e
+            print "Error accessing log " + log.idLog,e
             dataLog = None 
         return dataLog       
 
@@ -276,7 +297,7 @@ class Logbook(object):
             # dd.mm.yy
             d, y = y, int(d)+2000
         date = '%02d/%02d/%02d'%(int(y), int(m), int(d))
-        return date
+        return date.decode('utf-8')
 
 if __name__ == '__main__':
     def usage():
