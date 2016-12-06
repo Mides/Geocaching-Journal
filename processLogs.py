@@ -46,7 +46,7 @@ bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
 bookDescription = u"""<description><![CDATA[%s]]>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml]]></description>"""
 
 
-class Log(object):
+class LogHeader(object):
     def __init__(self, dateLog, typeLog, idCache, idLog, titleCache, natureLog):
         self.dateLog = dateLog
         self.typeLog = typeLog
@@ -56,7 +56,7 @@ class Log(object):
         self.natureLog = natureLog
 
 
-class Logbook(object):
+class Logbook(object):  
     """
     Logbook : generate a list of logs with images for a geocacher
     """
@@ -95,52 +95,52 @@ class Logbook(object):
         listLog = self.searchHeaderLog()
         listLogSorted = sorted(listLog, key=lambda log: log.dateLog)
         previousDate = ''
-        for log in listLogSorted:
+        for logHeader in listLogSorted:
             # check if date is in the correct interval
-            if log.dateLog != previousDate:
+            if logHeader.dateLog != previousDate:
                 numberDaySearch += 1
-            if self.startDate and log.dateLog < self.startDate:
+            if self.startDate and logHeader.dateLog < self.startDate:
                 continue
-            if self.endDate and log.dateLog > self.endDate:
+            if self.endDate and logHeader.dateLog > self.endDate:
                 continue
             numberLogSelected += 1
-            if log.dateLog != previousDate:
-                self.fXML.write('<date>%s</date>\n' % (self.formatDate(log.dateLog)))
+            if logHeader.dateLog != previousDate:
+                self.fXML.write('<date>%s</date>\n' % (self.formatDate(logHeader.dateLog)))
                 numberDaysSelected += 1
-            previousDate = log.dateLog
+            previousDate = logHeader.dateLog
 
             # building a local cache of the HTML page of each log
             # directory: Logs and 16 sub-directories based on the first letter
-            url, dirLog = (('seek', 'Logs') if log.natureLog == 'C' else ('track', 'LogsTB'))
-            if self.refresh or not self.isFileData(dirLog, log.idLog):
-                dataLogBody = self.loadLogFromUrl(url, dirLog, log)
-            elif self.isFileData(dirLog, log.idLog):
-                dataLogBody = self.loadLogFromFile(dirLog, log)
+            url, dirLog = (('seek', 'Logs') if logHeader.natureLog == 'C' else ('track', 'LogsTB'))
+            if self.refresh or not self.isFileData(dirLog, logHeader.idLog):
+                dataLogBody = self.loadLogFromUrl(url, dirLog, logHeader)
+            elif self.isFileData(dirLog, logHeader.idLog):
+                dataLogBody = self.loadLogFromFile(dirLog, logHeader)
             if dataLogBody:
                 # grabbing information from the log page
-                self.parseLog(dataLogBody, log)
+                self.parseLog(dataLogBody, logHeader)
         self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
         self.fXML.write('</document>')
         self.fXML.close()
         print 'Logs: ', numberLogSelected, '/', len(listLog), 'Days:', numberDaysSelected, '/', numberDaySearch
         print 'Result file:', self.fNameOutput
 
-    def parseLog(self, dataLogBody, log):
+    def parseLog(self, dataLogBody, logHeader):
         """
         analyses the HTML content of a log page
         """
 
         text = ''
         listeImages = []
-        titleCache = log.titleCache
+        titleCache = logHeader.titleCache
 
-        url, urlLog = (('seek/cache_', 'seek') if log.natureLog == 'C' else ('track/', 'track'))
+        url, urlLog = (('seek/cache_', 'seek') if logHeader.natureLog == 'C' else ('track/', 'track'))
         if url == 'track/' and 'cache_details.aspx' in dataLogBody:
             # adding the name of the cache where the trackable is, if present in the log
             titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>', dataLogBody, re.S).group(2)
-            titleCache = log.titleCache + ' @ ' + titleTb
-        self.fXML.write('<post><![CDATA[%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |' % (titleCache, url, log.idCache))
-        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s]]></post>\n' % (log.typeLog, urlLog, log.idLog))
+            titleCache = logHeader.titleCache + ' @ ' + titleTb
+        self.fXML.write('<post><![CDATA[%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |' % (titleCache, url, logHeader.idCache))
+        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s]]></post>\n' % (logHeader.typeLog, urlLog, logHeader.idLog))
 
         if '_LogText">' in dataLogBody:
             text = re.search('_LogText">(.*?)</span>', dataLogBody, re.S).group(1)
@@ -148,7 +148,7 @@ class Logbook(object):
             self.fXML.write('<text><![CDATA[%s]]></text>\n' % text)
         else:
             self.fXML.write('<text> </text>\n')
-            print "!!!! Log unavailable", log.idLog
+            print "!!!! Log unavailable", logHeader.idLog
             return
 
         if 'LogBookPanel1_GalleryList' in dataLogBody:  # if Additional images
@@ -165,7 +165,7 @@ class Logbook(object):
             panora = self.isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
-            print u'!!!! Log without image', log.idLog, log.dateLog, u'%r' % titleCache,'>>>', log.typeLog
+            print u'!!!! Log without image', logHeader.idLog, logHeader.dateLog, u'%r' % titleCache,'>>>', logHeader.typeLog
 
         # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
         if listeImages:
@@ -217,7 +217,7 @@ class Logbook(object):
             # test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog != '':
-                listLogHeader.append(Log(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
+                listLogHeader.append(LogHeader(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
                 try:
                     daysLogs[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
                 except KeyError:
@@ -226,25 +226,20 @@ class Logbook(object):
                     print "%s|%s|%s|%s|%s|%s" % (idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         return listLogHeader
 
-    def loadLogFromFile(self, dirLog, log):
-        """
-        load data log from HD
-        """
-        
-        dirLog = dirLog + '/_%s_/' % log.idLog[0]
-        with codecs.open(dirLog+log.idLog, 'r', 'utf-8') as fr:
+    def loadLogFromFile(self, dirLog, logHeader):
+        dirLog = dirLog + '/_%s_/' % logHeader.idLog[0]
+        with codecs.open(dirLog+logHeader.idLog, 'r', 'utf-8') as fr:
             if self.verbose:
-                print "Loading for cache " + log.titleCache
+                print "Loading for cache " + logHeader.titleCache
             dataLogBody = fr.read()
         return dataLogBody
 
-    def loadLogFromUrl(self, url, dirLog, log):
+    def loadLogFromUrl(self, url, dirLog, logHeader):
         """
         download and save data from url
         """
-        
-        dirLog = dirLog + '/_%s_/' % log.idLog[0]
-        url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID=' + log.idLog
+        dirLog = dirLog + '/_%s_/' % logHeader.idLog[0]
+        url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID=' + logHeader.idLog
         print "Fetching log", url
         try:
             request = urllib2.Request(url)
@@ -256,11 +251,11 @@ class Logbook(object):
                 dataLogBody = f.read().decode('utf-8')
             else:
                 dataLogBody = response.read().decode('utf-8')
-            print "Saving log file "+log.idLog
-            with codecs.open(dirLog+log.idLog, 'w', 'utf-8') as fw:
+            print "Saving log file "+logHeader.idLog
+            with codecs.open(dirLog+logHeader.idLog, 'w', 'utf-8') as fw:
                 fw.write(dataLogBody)
         except (urllib2.HTTPError, urllib2.URLError), e:
-            print "Error accessing log " + log.idLog, e
+            print "Error accessing log " + logHeader.idLog, e
             dataLogBody = None
         return dataLogBody
 
