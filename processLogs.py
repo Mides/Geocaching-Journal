@@ -227,6 +227,10 @@ class Logbook(object):
         return listLogHeader
 
     def loadLogFromFile(self, dirLog, log):
+        """
+        load data log from HD
+        """
+        
         dirLog = dirLog + '/_%s_/' % log.idLog[0]
         with codecs.open(dirLog+log.idLog, 'r', 'utf-8') as fr:
             if self.verbose:
@@ -238,6 +242,7 @@ class Logbook(object):
         """
         download and save data from url
         """
+        
         dirLog = dirLog + '/_%s_/' % log.idLog[0]
         url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID=' + log.idLog
         print "Fetching log", url
