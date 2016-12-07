@@ -195,7 +195,6 @@ class Logbook(object):
             return True
 
     def searchHeaderLog(self):
-        daysLogs = {}
         listLogHeader = []
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
@@ -218,10 +217,6 @@ class Logbook(object):
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog != '':
                 listLogHeader.append(LogHeader(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
-                try:
-                    daysLogs[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
-                except KeyError:
-                    daysLogs[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
                 if self.verbose:
                     print "%s|%s|%s|%s|%s|%s" % (idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         return listLogHeader
