@@ -257,6 +257,8 @@ class Logbook(object):
         except (urllib2.HTTPError, urllib2.URLError), e:
             print "Error accessing log " + logHeader.idLog, e
             dataLogBody = None
+        finally:
+            response.close()
         return dataLogBody
 
     def formatDate(self, date):
