@@ -89,13 +89,13 @@ class Logbook(object):
         except:
             self.fXML.write('<?xml version="1.0" encoding="UTF-8"?>')
             self.fXML.write('<document>\n')
-            self.fXML.write('<title><![CDATA[' + bookTitle + ']]></title>\n')
-            self.fXML.write('<description>' + bookDescription + '</description>\n')
+            self.fXML.write('<title><![CDATA[%s]]></title>\n' % bookTitle)
+            self.fXML.write('<description>%s</description>\n' % bookDescription)
 
-        listLog = self.searchHeaderLog()
-        listLogSorted = sorted(listLog, key=lambda log: log.dateLog)
+        listHeaderLog = self.searchHeaderLog()
+        listHeaderLogSorted = sorted(listHeaderLog, key=lambda log: log.dateLog)
         previousDate = ''
-        for logHeader in listLogSorted:
+        for logHeader in listHeaderLogSorted:
             # check if date is in the correct interval
             if logHeader.dateLog != previousDate:
                 numberDaySearch += 1
@@ -122,7 +122,7 @@ class Logbook(object):
         self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
         self.fXML.write('</document>')
         self.fXML.close()
-        print 'Logs: ', numberLogSelected, '/', len(listLog), 'Days:', numberDaysSelected, '/', numberDaySearch
+        print 'Logs: ', numberLogSelected, '/', len(listHeaderLog), 'Days:', numberDaysSelected, '/', numberDaySearch
         print 'Result file:', self.fNameOutput
 
     def parseLog(self, dataLogBody, logHeader):
@@ -234,7 +234,7 @@ class Logbook(object):
         download and save data from url
         """
         dirLog = dirLog + '/_%s_/' % logHeader.idLog[0]
-        url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID=' + logHeader.idLog
+        url = 'http://www.geocaching.com/' + url + '/log.aspx?LUID=' + logHeader.idLog
         print "Fetching log", url
         try:
             request = urllib2.Request(url)
