@@ -160,10 +160,12 @@ class Logbook(object):
             for index, tag in enumerate(url):
                 panora = self.isPanorama(title[index])
                 listeImages.append((url[index], title[index], panora))
+            print '=> Log with %s images' % str(len(listeImages))
         elif 'LogBookPanel1_ImageMain' in dataLogBody:  # if single images
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>', dataLogBody, re.S)
             panora = self.isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
+            print '=> Log with one image'
         else:
             print u'!!!! Log without image', logHeader.idLog, logHeader.dateLog, u'%r' % titleCache,'>>>', logHeader.typeLog
 
