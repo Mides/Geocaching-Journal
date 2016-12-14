@@ -201,6 +201,7 @@ class Logbook(object):
         tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
         listTr = [result.group(1) for result in tagTr]
+        logNumber = 0
         for tr in listTr:
             td = re.finditer('<td>(.*?)</td>', tr, re.S)
             listTd = [result.group(1) for result in td]
@@ -216,9 +217,10 @@ class Logbook(object):
             # test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog != '':
+                logNumber += 1
                 listLogHeader.append(LogHeader(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
                 if self.verbose:
-                    print "%s|%s|%s|%s|%s|%s" % (idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    print "(%s) %s|%s|%s|%s|%s|%s" % (logNumber, idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         return listLogHeader
 
     def loadLogFromFile(self, dirLog, logHeader):
