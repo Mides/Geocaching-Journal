@@ -118,14 +118,43 @@ class Logbook(object):
                 dataLogBody = self.loadLogFromFile(dirLog, logHeader)
             if dataLogBody:
                 # grabbing information from the log page
-                self.parseLog(dataLogBody, logHeader)
+                self.parseLogBody(dataLogBody, logHeader)
         self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
         self.fXML.write('</document>')
         self.fXML.close()
         print 'Logs: ', numberLogSelected, '/', len(listHeaderLog), 'Days:', numberDaysSelected, '/', numberDaySearch
         print 'Result file:', self.nameXmlFile
 
-    def parseLog(self, dataLogBody, logHeader):
+    def searchHeaderLog(self):
+        listLogHeader = []
+        with codecs.open(self.nameSourceFile, 'r', 'utf-8') as fIn:
+            cacheData = fIn.read()
+        tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S).group(1)
+        tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
+        listTr = [result.group(1) for result in tagTr]
+        logNumber = 0
+        for tr in listTr:
+            td = re.finditer('<td>(.*?)</td>', tr, re.S)
+            listTd = [result.group(1) for result in td]
+            dateLog = self.normalizeDate(listTd[2].strip())
+            typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
+            idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
+            idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
+            titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
+            natureLog = (u'C' if listTd[3].find('cache_details') > 1 else u'T')  # C for Cache and T for trackable
+
+            # keeping the logs that are not excluded by -x option
+            # keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
+            # test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
+            keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+            if keepLog and idLog != '':
+                logNumber += 1
+                listLogHeader.append(LogHeader(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
+                if self.verbose:
+                    print "(%s) %s|%s|%s|%s|%s|%s" % (logNumber, idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+        return listLogHeader
+
+    def parseLogBody(self, dataLogBody, logHeader):
         """
         analyses the HTML content of a log page
         """
@@ -195,35 +224,6 @@ class Logbook(object):
             return False
         else:
             return True
-
-    def searchHeaderLog(self):
-        listLogHeader = []
-        with codecs.open(self.nameSourceFile, 'r', 'utf-8') as fIn:
-            cacheData = fIn.read()
-        tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S).group(1)
-        tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
-        listTr = [result.group(1) for result in tagTr]
-        logNumber = 0
-        for tr in listTr:
-            td = re.finditer('<td>(.*?)</td>', tr, re.S)
-            listTd = [result.group(1) for result in td]
-            dateLog = self.normalizeDate(listTd[2].strip())
-            typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
-            idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
-            idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
-            titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
-            natureLog = (u'C' if listTd[3].find('cache_details') > 1 else u'T')  # C for Cache and T for trackable
-
-            # keeping the logs that are not excluded by -x option
-            # keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
-            # test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
-            keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
-            if keepLog and idLog != '':
-                logNumber += 1
-                listLogHeader.append(LogHeader(dateLog, typeLog, idCache, idLog, titleCache, natureLog))
-                if self.verbose:
-                    print "(%s) %s|%s|%s|%s|%s|%s" % (logNumber, idLog, dateLog, idCache, titleCache, typeLog, natureLog)
-        return listLogHeader
 
     def loadLogFromFile(self, dirLog, logHeader):
         dirLog = dirLog + '/_%s_/' % logHeader.idLog[0]
