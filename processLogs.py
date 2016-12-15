@@ -62,11 +62,11 @@ class Logbook(object):
     """
 
     def __init__(self,
-                 fNameInput, fNameOutput="logbook.xml",
+                 nameSourceFile, nameXmlFile="logbook.xml",
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
-        self.fNameInput = fNameInput
-        self.fNameOutput = fNameOutput
-        self.fXML = codecs.open(fNameOutput, "w", 'utf-8', buffering=0)
+        self.nameSourceFile = nameSourceFile
+        self.nameXmlFile = nameXmlFile
+        self.fXML = codecs.open(nameXmlFile, "w", 'utf-8', buffering=0)
         self.verbose = verbose
         self.startDate = startDate
         self.endDate = endDate
@@ -123,7 +123,7 @@ class Logbook(object):
         self.fXML.write('</document>')
         self.fXML.close()
         print 'Logs: ', numberLogSelected, '/', len(listHeaderLog), 'Days:', numberDaysSelected, '/', numberDaySearch
-        print 'Result file:', self.fNameOutput
+        print 'Result file:', self.nameXmlFile
 
     def parseLog(self, dataLogBody, logHeader):
         """
@@ -158,22 +158,22 @@ class Logbook(object):
             url = re.findall('src="(.*?)" />', tagTable, re.S)
             url = [re.sub('log/.*/', "log/display/", result) for result in url]  # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
             for index, tag in enumerate(url):
-                panora = self.isPanorama(title[index])
-                listeImages.append((url[index], title[index], panora))
+                panoraExist = self.isPanorama(title[index])
+                listeImages.append((url[index], title[index], panoraExist))
             print '=> Log with %s images' % str(len(listeImages))
         elif 'LogBookPanel1_ImageMain' in dataLogBody:  # if single images
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>', dataLogBody, re.S)
-            panora = self.isPanorama(urlTitle.group(4))
-            listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
+            panoraExist = self.isPanorama(urlTitle.group(4))
+            listeImages.append((urlTitle.group(2), urlTitle.group(4), panoraExist))
             print '=> Log with one image'
         else:
             print u'!!!! Log without image', logHeader.idLog, logHeader.dateLog, u'%r' % titleCache,'>>>', logHeader.typeLog
 
-        # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
+        # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panoraExist
         if listeImages:
             self.fXML.write('<images>\n')
-            for (img, caption, panora) in listeImages:
-                typeImage = ('pano' if panora else 'image')
+            for (img, caption, panoraExist) in listeImages:
+                typeImage = ('pano' if panoraExist else 'image')
                 # at this point, no information is available on the size of image
                 # assume a standard format 640x480 (nostalgia of the 80's?)
                 if typeImage == 'pano':
@@ -198,7 +198,7 @@ class Logbook(object):
 
     def searchHeaderLog(self):
         listLogHeader = []
-        with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
+        with codecs.open(self.nameSourceFile, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
         tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
