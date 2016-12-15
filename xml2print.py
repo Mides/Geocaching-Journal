@@ -145,11 +145,11 @@ class XmlHandler(handler.ContentHandler):
         return buffeur    
 
     def constructSource(self):
-        buffeur = ('</div>\n') #<div class="main"
-        buffeur += ('<div>\n')
-        buffeur += ('<h2 class="footer">%s</h2>\n'%self.current_content)
-        buffeur += ('</div>\n')
-        buffeur += ('</html>')
+        buffeur = ("</div>\n"  #<div class=\"main\ 
+                   "<div>\n"
+                   "<h2 class=\"footer\">%s</h2>\n"
+                   "</div>\n"
+                   "</html>") % self.current_content
         self.fw.write(buffeur)        
         self.fw.close()
         print 'Number days : %s - Number logs : %s'%(self.numberDays, self.numberLogs)
