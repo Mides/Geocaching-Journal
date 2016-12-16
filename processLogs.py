@@ -41,7 +41,7 @@ import time
 locale.setlocale(locale.LC_ALL, '')
 
 
-def lapseTime(func):
+def elapsedTime(func):
     def wrapper(self, *args):
         startTime = time.time()        
         func(self, *args)
@@ -228,7 +228,7 @@ class Logbook(object):
             dataLogBody = fr.read()
         return dataLogBody
 
-    @lapseTime
+    @elapsedTime
     def loadLogFromUrl(self, url, dirLog, logHeader):
         """
         download and save data from url
