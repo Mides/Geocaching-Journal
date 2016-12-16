@@ -37,8 +37,6 @@ import codecs
 import StringIO
 import gzip
 
-# os.environ['LC_ALL'] = 'fr_FR.UTF-8'
-# locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 locale.setlocale(locale.LC_ALL, '')
 
 # default title and description of the logbook (should be in logbook_header.xml)
@@ -83,20 +81,20 @@ class Logbook(object):
 
         listHeaderLog = self.searchHeaderLog()
         listHeaderLogSorted = sorted(listHeaderLog, key=lambda log: log['datelog'])
-        previousDate = ''
+        previousDateLog = ''
         for logHeader in listHeaderLogSorted:
             # check if date is in the correct interval
-            if logHeader['datelog'] != previousDate:
+            if logHeader['datelog'] != previousDateLog:
                 numberDaySearch += 1
             if self.startDate and logHeader['datelog'] < self.startDate:
                 continue
             if self.endDate and logHeader['datelog'] > self.endDate:
                 continue
             numberLogSelected += 1
-            if logHeader['datelog'] != previousDate:
+            if logHeader['datelog'] != previousDateLog:
                 self.fXML.write('<date>%s</date>\n' % (self.formatDate(logHeader['datelog'])))
                 numberDaysSelected += 1
-            previousDate = logHeader['datelog']
+            previousDateLog = logHeader['datelog']
             # building a local cache of the HTML page of each log
             # directory: Logs and 16 sub-directories based on the first letter
             url, dirLog = (('seek', 'Logs') if logHeader['naturelog'] == 'C' else ('track', 'LogsTB'))
@@ -106,7 +104,8 @@ class Logbook(object):
                 dataLogBody = self.loadLogFromFile(dirLog, logHeader)
             if dataLogBody:
                 # grabbing information from the log page
-                self.parseLogBody(dataLogBody, logHeader)
+                self.parseTextLog(dataLogBody, logHeader)                
+                self.parseImagesLog(dataLogBody, logHeader)
         self.fXML.write('<source>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</source>\n')
         self.fXML.write('</document>')
         self.fXML.close()
@@ -142,13 +141,8 @@ class Logbook(object):
                     print "(%s) %s|%s|%s|%s|%s|%s" % (logNumber, idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         return listLogHeader
     
-    def parseLogBody(self, dataLogBody, logHeader):
-        """
-        analyses the HTML content of a log page
-        """
-
+    def parseTextLog(self, dataLogBody, logHeader):
         text = ''
-        listeImages = []
         titleCache = logHeader['titlecache']
 
         url, urlLog = (('seek/cache_', 'seek') if logHeader['naturelog'] == 'C' else ('track/', 'track'))
@@ -167,7 +161,10 @@ class Logbook(object):
             self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable", logHeader.idLog
             return
-
+    
+    def parseImagesLog(self, dataLogBody, logHeader):
+        listeImages = []
+        titleCache = logHeader['titlecache']
         if 'LogBookPanel1_GalleryList' in dataLogBody:  # if Additional images
             tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>', dataLogBody, re.S).group(0)
             title = re.findall('<img alt=\'(.*?)\' src', tagTable, re.S)
@@ -175,22 +172,22 @@ class Logbook(object):
             url = re.findall('src="(.*?)" />', tagTable, re.S)
             url = [re.sub('log/.*/', "log/display/", result) for result in url]  # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
             for index, tag in enumerate(url):
-                panoraExist = self.isPanorama(title[index])
-                listeImages.append((url[index], title[index], panoraExist))
+                isPanora = self.isPanorama(title[index])
+                listeImages.append((url[index], title[index], isPanora))
             print '=> Log with %s images' % str(len(listeImages))
         elif 'LogBookPanel1_ImageMain' in dataLogBody:  # if single images
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>', dataLogBody, re.S)
-            panoraExist = self.isPanorama(urlTitle.group(4))
-            listeImages.append((urlTitle.group(2), urlTitle.group(4), panoraExist))
+            isPanora = self.isPanorama(urlTitle.group(4))
+            listeImages.append((urlTitle.group(2), urlTitle.group(4), isPanora))
             print '=> Log with one image'
         else:
             print u'!!!! Log without image', logHeader['idlog'], logHeader['datelog'], u'%r' % titleCache,'>>>', logHeader['typelog']
 
-        # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panoraExist
+        # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field isPanora
         if listeImages:
             self.fXML.write('<images>\n')
-            for (img, caption, panoraExist) in listeImages:
-                typeImage = ('pano' if panoraExist else 'image')
+            for (img, caption, isPanora) in listeImages:
+                typeImage = ('pano' if isPanora else 'image')
                 # at this point, no information is available on the size of image
                 # assume a standard format 640x480 (nostalgia of the 80's?)
                 if typeImage == 'pano':
