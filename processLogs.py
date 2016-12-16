@@ -36,8 +36,18 @@ import urllib2
 import codecs
 import StringIO
 import gzip
+import time
 
 locale.setlocale(locale.LC_ALL, '')
+
+
+def lapseTime(func):
+    def wrapper(self, *args):
+        startTime = time.time()        
+        func(self, *args)
+        elapsedTime = time.time() - startTime        
+        print '=> %.3f seconds' % elapsedTime        
+    return wrapper
 
 # default title and description of the logbook (should be in logbook_header.xml)
 bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
@@ -209,7 +219,7 @@ class Logbook(object):
             return False
         else:
             return True
-
+        
     def loadLogFromFile(self, dirLog, logHeader):
         dirLog = dirLog + '/_%s_/' % logHeader['idlog'][0]
         with codecs.open(dirLog+logHeader['idlog'], 'r', 'utf-8') as fr:
@@ -218,12 +228,13 @@ class Logbook(object):
             dataLogBody = fr.read()
         return dataLogBody
 
+    @lapseTime
     def loadLogFromUrl(self, url, dirLog, logHeader):
         """
         download and save data from url
         """
-        dirLog = dirLog + '/_%s_/' % logHeader.idLog[0]
-        url = 'http://www.geocaching.com/' + url + '/log.aspx?LUID=' + logHeader.idLog
+        dirLog = dirLog + '/_%s_/' % logHeader['idlog'][0]
+        url = 'http://www.geocaching.com/' + url + '/log.aspx?LUID=' + logHeader['idlog']
         print "Fetching log", url
         try:
             request = urllib2.Request(url)
@@ -235,11 +246,11 @@ class Logbook(object):
                 dataLogBody = f.read().decode('utf-8')
             else:
                 dataLogBody = response.read().decode('utf-8')
-            print "Saving log file "+logHeader.idLog
-            with codecs.open(dirLog+logHeader.idLog, 'w', 'utf-8') as fw:
+            print "Saving log file "+logHeader['idlog']
+            with codecs.open(dirLog+logHeader['idlog'], 'w', 'utf-8') as fw:
                 fw.write(dataLogBody)
         except (urllib2.HTTPError, urllib2.URLError), e:
-            print "Error accessing log " + logHeader.idLog, e
+            print "Error accessing log " + logHeader['idlog'], e
             dataLogBody = None
         finally:
             response.close()
