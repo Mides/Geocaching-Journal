@@ -44,9 +44,10 @@ locale.setlocale(locale.LC_ALL, '')
 def elapsedTime(func):
     def wrapper(self, *args):
         startTime = time.time()        
-        func(self, *args)
+        data = func(self, *args)
         elapsedTime = time.time() - startTime        
-        print '=> %.3f seconds' % elapsedTime        
+        print '=> %.3f seconds' % elapsedTime 
+        return data      
     return wrapper
 
 # default title and description of the logbook (should be in logbook_header.xml)
